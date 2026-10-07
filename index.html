@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CropDoctor - AI Crop Pest & Disease Detection</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #2e7d32;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .ai-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        .upload-section {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 40px;
+            margin: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #2196f3;
+            color: white;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .image-preview {
+            margin: 20px 0;
+            display: none;
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .loading {
+            display: none;
+            margin: 30px 0;
+        }
+
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #4caf50;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .diagnosis-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .diagnosis-card h2 {
+            color: #2e7d32;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+
+        .confidence {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 10px 5px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 1.1em;
+        }
+
+        .severity {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 10px 5px;
+        }
+
+        .severity-high { background: #ffcdd2; color: #c62828; }
+        .severity-medium { background: #fff9c4; color: #f57f17; }
+        .severity-low { background: #fff9c4; color: #f57f17; }
+        .severity-none { background: #c8e6c9; color: #2e7d32; }
+        .severity-critical { background: #ef5350; color: white; }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .info-box {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .info-box strong {
+            display: block;
+            color: #2e7d32;
+            margin-bottom: 5px;
+        }
+
+        .solutions {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .solutions h3 {
+            color: #2e7d32;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .solution-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .solution-number {
+            background: #4caf50;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .prevention-box {
+            background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .prevention-box h4 {
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .status-message {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 0.95em;
+            border: 2px solid #4caf50;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        @media (max-width: 600px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            .header h1 {
+                font-size: 1.8em;
+            }
+            .btn {
+                padding: 12px 30px;
+                font-size: 14px;
+                display: block;
+                width: 100%;
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌾 CropDoctor</h1>
+            <span class="ai-badge">🤖 AI Crop Doctor</span>
+            <p style="color: #666; margin-top: 10px;">Maize & Sugarcane Pest and Disease Detection</p>
+            <p style="font-size: 0.85em; color: #999;">AI-assisted diagnosis with general guidance</p>
+            <p style="font-size: 0.85em; color: #8d6e00; background: #fff8e1; border-radius: 8px; padding: 10px; margin-top: 12px;">
+                ⚠️ AI results can be wrong. Confirm with an agricultural extension officer before applying any chemical.
+            </p>
+        </div>
+
+        <div id="uploadSection" class="upload-section">
+            <div style="font-size: 80px; margin-bottom: 20px;">📷</div>
+            <h2 style="color: #333; margin-bottom: 15px;">Capture Plant Image</h2>
+            <p style="color: #666; margin-bottom: 20px;">
+                Select the crop, then take or upload a clear plant photo.
+            </p>
+
+            <div style="margin: 15px auto 20px; max-width: 420px; text-align: left;">
+                <label for="cropSelect" style="display:block; font-weight:bold; color:#2e7d32; margin-bottom:8px;">
+                    🌱 Crop
+                </label>
+                <select id="cropSelect" style="width:100%; padding:13px; border:2px solid #c8e6c9; border-radius:8px; font-size:16px;">
+                    <option value="maize">🌽 Maize</option>
+                    <option value="sugarcane">🎋 Sugarcane</option>
+                </select>
+            </div>
+
+            <div id="statusMessage" class="status-message" style="display: none;"></div>
+            <div id="errorMessage" class="error-message"></div>
+
+            <input type="file" id="fileInput" accept="image/*">
+            <input type="file" id="cameraInput" accept="image/*" capture="environment">
+
+            <button class="btn btn-primary" id="cameraBtn" onclick="document.getElementById('cameraInput').click()">
+                📸 Take Photo
+            </button>
+            <button class="btn btn-secondary" id="uploadBtn" onclick="document.getElementById('fileInput').click()">
+                🖼️ Upload Image
+            </button>
+
+            <div class="image-preview" id="imagePreview">
+                <img id="previewImg" src="" alt="Preview">
+                <button class="btn btn-secondary" style="margin-top: 20px;" onclick="resetApp()">
+                    🔄 Take New Photo
+                </button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 20px; color: #666;" id="loadingText">🤖 AI is analyzing your plant...</p>
+            </div>
+        </div>
+
+        <div id="result" class="result">
+            <div class="diagnosis-card">
+                <h2 id="diseaseName"></h2>
+                <div>
+                    <strong style="color: #666;">Crop:</strong> <span id="cropName">Maize</span><br>
+                    <span class="confidence" id="confidenceBadge">🎯 AI Confidence: --</span>
+                    <span class="severity" id="severityBadge"></span>
+                </div>
+
+                <p id="symptomsText" style="color:#444; margin-top:10px; line-height:1.5;"></p>
+                <p id="alternativesText" style="color:#777; margin-top:8px; font-size:0.9em;"></p>
+
+                <div class="info-grid">
+                    <div class="info-box">
+                        <strong>🔎 Type</strong>
+                        <span id="growthStage"></span>
+                    </div>
+                    <div class="info-box">
+                        <strong>📅 Action Priority</strong>
+                        <span id="maturityStatus"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="solutions">
+                <h3>💡 Recommended Actions</h3>
+                <div id="solutionsList"></div>
+            </div>
+
+            <div class="prevention-box">
+                <h4>🛡️ Prevention Tips</h4>
+                <p id="preventionText"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /*
+         * CropDoctor upgraded frontend
+         * -------------------------------------------------------------
+         * IMPORTANT:
+         * 1. This page deliberately does NOT contain a Roboflow API key.
+         * 2. Set BACKEND_URL to your secure prediction endpoint.
+         * 3. The backend should call your chosen free/open model and return:
+         *    {
+         *      "crop": "maize",
+         *      "class": "fall-armyworm",
+         *      "confidence": 0.92,
+         *      "predictions": [...]
+         *    }
+         *
+         * Expected backend response can also use "label" or "disease".
+         *
+         * Example:
+         *   POST /predict
+         *   Content-Type: multipart/form-data
+         *   field: image
+         *   field: crop = maize|sugarcane
+         */
+
+        const BACKEND_URL = '/api/diagnose';
+
+        // Minimum confidence before CropDoctor gives a diagnosis.
+        const MIN_CONFIDENCE = 0.55;
+
+        const fileInput = document.getElementById('fileInput');
+        const cameraInput = document.getElementById('cameraInput');
+        const cropSelect = document.getElementById('cropSelect');
+        const imagePreview = document.getElementById('imagePreview');
+        const previewImg = document.getElementById('previewImg');
+        const loading = document.getElementById('loading');
+        const loadingText = document.getElementById('loadingText');
+        const result = document.getElementById('result');
+        const errorMessage = document.getElementById('errorMessage');
+        const statusMessage = document.getElementById('statusMessage');
+
+        /*
+         * Disease/pest guidance database.
+         * The AI identifies the class; this database supplies the advice.
+         *
+         * NOTE: Existing treatment entries from the original project are
+         * retained where they existed. Verify pesticide products/rates with
+         * current Malawi agricultural-extension guidance before production use.
+         */
+        const diseaseDatabase = {
+            maize: {
+                healthy: {
+                    disease: 'Healthy Plant ✅',
+                    severity: 'None',
+                    stage: 'Healthy growth',
+                    maturity: 'Continue monitoring',
+                    solutions: [
+                        'Maintain current crop-care practices.',
+                        'Monitor regularly for early pest and disease symptoms.',
+                        'Keep the field weed-free and maintain balanced crop nutrition.',
+                        'Scout regularly for Fall Armyworm during early growth.'
+                    ],
+                    prevention: 'Scout fields regularly, maintain balanced nutrition, practice good field sanitation and use integrated pest management (IPM).'
+                },
+
+                blight: {
+                    disease: 'Northern Leaf Blight',
+                    severity: 'High',
+                    stage: 'Fungal infection',
+                    maturity: 'Potential yield loss',
+                    solutions: [
+                        'Use resistant varieties where available.',
+                        'Remove heavily infected crop material and manage crop residues.',
+                        'Improve field air circulation and avoid excessively dense planting.',
+                        'Use an approved fungicide only according to the current product label and local agricultural guidance.',
+                        'Practice crop rotation with suitable non-host crops.'
+                    ],
+                    prevention: 'Use certified seed, resistant varieties, good field sanitation and crop rotation.'
+                },
+
+                northern_leaf_blight: null,
+                'northern-leaf-blight': null,
+
+                brown_spot: {
+                    disease: 'Brown Spot',
+                    severity: 'Medium',
+                    stage: 'Fungal infection',
+                    maturity: 'Potential yield loss',
+                    solutions: [
+                        'Improve field drainage and avoid waterlogging.',
+                        'Remove or properly manage infected crop debris.',
+                        'Use resistant varieties if available.',
+                        'Maintain balanced crop nutrition.',
+                        'Use an approved fungicide according to the current label and local agricultural guidance when recommended.'
+                    ],
+                    prevention: 'Use healthy seed, balanced fertilization, good drainage and field sanitation.'
+                },
+
+                corn_rust: {
+                    disease: 'Common Rust',
+                    severity: 'Medium',
+                    stage: 'Fungal infection',
+                    maturity: 'Potential yield loss',
+                    solutions: [
+                        'Use rust-resistant varieties where available.',
+                        'Scout plants regularly, especially when conditions favor disease.',
+                        'Remove volunteer maize where practical.',
+                        'Use an approved fungicide according to local agricultural guidance when treatment is justified.'
+                    ],
+                    prevention: 'Plant resistant varieties, scout regularly and practice crop rotation.'
+                },
+
+                rust: null,
+                'common-rust': null,
+                common_rust: null,
+
+                corn_smut: {
+                    disease: 'Corn Smut',
+                    severity: 'Medium',
+                    stage: 'Fungal infection',
+                    maturity: 'Localized damage',
+                    solutions: [
+                        'Remove and safely destroy infected galls before they release spores.',
+                        'Avoid unnecessary mechanical injury to plants.',
+                        'Use disease-free seed and suitable varieties.',
+                        'Practice crop rotation where appropriate.'
+                    ],
+                    prevention: 'Handle plants carefully, remove infected galls early and maintain good field sanitation.'
+                },
+
+                downy_mildew: {
+                    disease: 'Downy Mildew',
+                    severity: 'High',
+                    stage: 'Fungal-like infection',
+                    maturity: 'Can cause severe stunting and yield loss',
+                    solutions: [
+                        'Remove and destroy severely infected plants where appropriate.',
+                        'Improve air circulation and avoid excessively dense planting.',
+                        'Use resistant varieties where available.',
+                        'Use seed treatment or approved fungicide products only according to local agricultural guidance.'
+                    ],
+                    prevention: 'Use treated/quality seed, resistant varieties, good drainage and suitable plant spacing.'
+                },
+
+                'fall-armyworm-larva': {
+                    disease: 'Fall Armyworm',
+                    severity: 'Critical',
+                    stage: 'Pest infestation',
+                    maturity: 'Serious yield risk if uncontrolled',
+                    solutions: [
+                        'Scout plants frequently and target young larvae early.',
+                        'Hand-pick egg masses or larvae when practical on small farms.',
+                        'Use biological/cultural control and integrated pest management (IPM).',
+                        'Use only locally registered insecticides and follow the product label and agricultural-extension recommendations.',
+                        'Avoid repeatedly using the same insecticide mode of action to reduce resistance risk.'
+                    ],
+                    prevention: 'Frequent scouting, early planting where appropriate, field sanitation, biological control and coordinated IPM.'
+                },
+
+                'fall-armyworm': null,
+                fall_armyworm: null,
+                fallarmyworm: null,
+
+                grey_leaf_spot: {
+                    disease: 'Gray Leaf Spot',
+                    severity: 'High',
+                    stage: 'Fungal infection - Vegetative',
+                    maturity: 'Potential yield loss',
+                    solutions: [
+                        'Use resistant varieties where available.',
+                        'Manage crop residues and rotate with non-host crops.',
+                        'Avoid excessively dense planting.',
+                        'Use an approved fungicide only when recommended and according to its label.'
+                    ],
+                    prevention: 'Use certified seed, resistant varieties, crop rotation and good residue management.'
+                },
+
+                gray_leaf_spot: null,
+
+                'maize-streak-disease': {
+                    disease: 'Maize Streak Virus',
+                    severity: 'High',
+                    stage: 'Viral infection',
+                    maturity: 'Can cause severe stunting and yield loss',
+                    solutions: [
+                        'Remove severely infected plants where practical.',
+                        'Control leafhopper vectors using locally approved integrated pest-management methods.',
+                        'Plant resistant varieties where available.',
+                        'Control grass weeds that can host vectors.',
+                        'There is no direct cure for a virus; prevention and vector management are important.'
+                    ],
+                    prevention: 'Use resistant varieties, healthy seed, early scouting and good weed/vector management.'
+                },
+
+                maize_streak: null,
+                streak_virus: null,
+
+                'yellow-stem-borer': {
+                    disease: 'Yellow Stem Borer',
+                    severity: 'High',
+                    stage: 'Pest infestation',
+                    maturity: 'Stem damage and lodging risk',
+                    solutions: [
+                        'Scout for deadhearts and stem damage.',
+                        'Remove and destroy badly affected plant material where practical.',
+                        'Use biological and cultural control methods as part of IPM.',
+                        'Use only locally registered insecticides and follow the current product label and extension guidance.'
+                    ],
+                    prevention: 'Early scouting, crop-residue management, suitable rotation and integrated pest management.'
+                },
+
+                stem_borer: null,
+                'stem-borer': null,
+                grasshopper: {
+                    disease: 'Grasshopper Damage',
+                    severity: 'Medium',
+                    stage: 'Pest infestation',
+                    maturity: 'Leaf feeding can reduce plant growth',
+                    solutions: [
+                        'Scout field margins and young plants regularly.',
+                        'Reduce weed and alternative-host habitats around the field.',
+                        'Use mechanical or biological controls where practical.',
+                        'Use locally registered insecticides only when necessary and according to the label.'
+                    ],
+                    prevention: 'Regular scouting, weed management and integrated pest management.'
+                },
+
+                leaf_spot: {
+                    disease: 'Maize Leaf Spot',
+                    severity: 'Medium',
+                    stage: 'Fungal/bacterial leaf infection',
+                    maturity: 'Can reduce leaf area and yield',
+                    solutions: [
+                        'Scout fields regularly and note how many leaves are affected.',
+                        'Remove or properly manage infected crop residues after harvest.',
+                        'Rotate with non-host crops and avoid dense planting.',
+                        'Use resistant varieties where available.',
+                        'Confirm the exact cause with an extension officer before using any fungicide.'
+                    ],
+                    prevention: 'Use certified seed, crop rotation, good residue management and balanced nutrition.'
+                },
+
+                lethal_necrosis: {
+                    disease: 'Maize Lethal Necrosis (MLN)',
+                    severity: 'Critical',
+                    stage: 'Viral disease complex',
+                    maturity: 'Can destroy the crop - act immediately',
+                    solutions: [
+                        'Report suspected MLN to your agricultural extension officer immediately.',
+                        'Uproot and destroy severely affected plants away from the field.',
+                        'Do not move seed or plant material from affected fields.',
+                        'Control weeds and insect vectors as advised locally.',
+                        'There is no cure; do not replant maize in the same affected field without advice.'
+                    ],
+                    prevention: 'Use certified clean seed, rotate with non-cereal crops, control vectors and weeds, and report outbreaks early.'
+                },
+
+                'leaf-beetle': {
+                    disease: 'Leaf Beetle Damage',
+                    severity: 'Medium',
+                    stage: 'Pest infestation',
+                    maturity: 'Leaf feeding damage',
+                    solutions: [
+                        'Scout leaves regularly for adults and feeding damage.',
+                        'Remove insects manually where practical on small plots.',
+                        'Maintain field sanitation and weed control.',
+                        'Use locally registered control products only when necessary and according to the label.'
+                    ],
+                    prevention: 'Regular scouting, weed management and IPM.'
+                }
+            },
+
+            sugarcane: {
+                healthy: {
+                    disease: 'Healthy Sugarcane ✅',
+                    severity: 'None',
+                    stage: 'Healthy growth',
+                    maturity: 'Continue monitoring',
+                    solutions: [
+                        'Maintain good field sanitation and crop nutrition.',
+                        'Scout regularly for disease and pest symptoms.',
+                        'Remove severely affected plants promptly when appropriate.',
+                        'Maintain good drainage and weed control.'
+                    ],
+                    prevention: 'Use healthy planting material, resistant varieties where available, good sanitation and regular scouting.'
+                },
+
+                bacterial_blight: {
+                    disease: 'Sugarcane Bacterial Blight',
+                    severity: 'High',
+                    stage: 'Bacterial disease',
+                    maturity: 'Potential yield reduction',
+                    solutions: [
+                        'Remove and destroy severely affected plant material where practical.',
+                        'Use clean, healthy planting material.',
+                        'Avoid moving contaminated tools or planting material between fields.',
+                        'Use resistant/tolerant varieties where available.',
+                        'Seek local agricultural-extension advice for confirmed outbreaks.'
+                    ],
+                    prevention: 'Use clean planting material, resistant varieties, sanitation and good field hygiene.'
+                },
+
+                mosaic: {
+                    disease: 'Sugarcane Mosaic Disease',
+                    severity: 'High',
+                    stage: 'Viral disease',
+                    maturity: 'Can reduce plant vigor and yield',
+                    solutions: [
+                        'Remove severely affected stools where practical.',
+                        'Use certified disease-free planting material.',
+                        'Use resistant or tolerant varieties where available.',
+                        'Control alternative hosts and insect vectors as recommended locally.'
+                    ],
+                    prevention: 'Use clean planting material, resistant varieties and regular field scouting.'
+                },
+
+                mosaic_disease: null,
+                red_rot: {
+                    disease: 'Sugarcane Red Rot',
+                    severity: 'High',
+                    stage: 'Fungal disease',
+                    maturity: 'Can cause serious yield and stand losses',
+                    solutions: [
+                        'Remove and destroy severely affected stalks or stools where practical.',
+                        'Use healthy, disease-free planting material.',
+                        'Use resistant/tolerant varieties where available.',
+                        'Improve drainage and avoid prolonged waterlogging.',
+                        'Seek agricultural-extension advice for severe outbreaks.'
+                    ],
+                    prevention: 'Clean planting material, resistant varieties, field sanitation, crop rotation where suitable and good drainage.'
+                },
+
+                rust: {
+                    disease: 'Sugarcane Rust',
+                    severity: 'Medium',
+                    stage: 'Fungal disease',
+                    maturity: 'Can reduce photosynthetic leaf area',
+                    solutions: [
+                        'Scout fields regularly and identify the disease early.',
+                        'Use resistant/tolerant varieties where available.',
+                        'Maintain good crop nutrition and field management.',
+                        'Use an approved fungicide only when locally recommended and according to its label.'
+                    ],
+                    prevention: 'Resistant varieties, regular scouting, good nutrition and field sanitation.'
+                },
+
+                yellow_disease: {
+                    disease: 'Sugarcane Yellow Disease',
+                    severity: 'High',
+                    stage: 'Disease symptoms affecting plant vigor',
+                    maturity: 'Potential yield reduction',
+                    solutions: [
+                        'Use healthy planting material.',
+                        'Remove severely affected plants where practical.',
+                        'Use resistant/tolerant varieties where available.',
+                        'Seek local agricultural-extension guidance to confirm the cause and appropriate control.'
+                    ],
+                    prevention: 'Healthy planting material, resistant varieties and regular scouting.'
+                }
+            }
+        };
+
+        // Resolve aliases so different model class naming conventions work.
+        function buildAliases() {
+            const m = diseaseDatabase.maize;
+            m.northern_leaf_blight = m.blight;
+            m['northern-leaf-blight'] = m.blight;
+            m.rust = m.corn_rust;
+            m['common-rust'] = m.corn_rust;
+            m.common_rust = m.corn_rust;
+            m.gray_leaf_spot = m.grey_leaf_spot;
+            m.fall_armyworm = m['fall-armyworm-larva'];
+            m.fallarmyworm = m['fall-armyworm-larva'];
+            m['fall-armyworm'] = m['fall-armyworm-larva'];
+            m.stem_borer = m['yellow-stem-borer'];
+            m['stem-borer'] = m['yellow-stem-borer'];
+            m.leaf_blight = m.blight;
+            m['leaf-blight'] = m.blight;
+            m.streak_virus = m['maize-streak-disease'];
+            m.maize_streak = m['maize-streak-disease'];
+            m['streak-virus'] = m['maize-streak-disease'];
+            m.leaf_beetle = m['leaf-beetle'];
+            m['leaf-spot'] = m.leaf_spot;
+            m['lethal-necrosis'] = m.lethal_necrosis;
+
+            const s = diseaseDatabase.sugarcane;
+            s.mosaic_disease = s.mosaic;
+            s['bacterial-blight'] = s.bacterial_blight;
+            s['red-rot'] = s.red_rot;
+            s['yellow-disease'] = s.yellow_disease;
+        }
+        buildAliases();
+
+        window.addEventListener('load', () => {
+            statusMessage.style.display = 'block';
+            statusMessage.innerHTML =
+                '✅ <strong>CropDoctor is ready.</strong> Select maize or sugarcane and upload a clear plant image.';
+            setTimeout(() => statusMessage.style.display = 'none', 5000);
+        });
+
+        fileInput.addEventListener('change', handleImageUpload);
+        cameraInput.addEventListener('change', handleImageUpload);
+
+        function normalizeClass(value) {
+            return String(value || '')
+                .trim()
+                .toLowerCase()
+                .replace(/[–—]/g, '-')
+                .replace(/\s+/g, '-')
+                .replace(/[_]+/g, '_');
+        }
+
+        function getCropName(crop) {
+            return crop === 'sugarcane' ? 'Sugarcane' : 'Maize';
+        }
+
+        function getPredictionFromResponse(data) {
+            if (!data || typeof data !== 'object') return null;
+
+            // Common response formats: direct result or predictions array.
+            if (Array.isArray(data.predictions) && data.predictions.length) {
+                return data.predictions.reduce((best, item) => {
+                    return Number(item.confidence || 0) > Number(best.confidence || 0)
+                        ? item : best;
+                });
+            }
+
+            if (data.prediction && typeof data.prediction === 'object') {
+                return data.prediction;
+            }
+
+            if (data.class || data.label || data.disease) {
+                return data;
+            }
+
+            return null;
+        }
+
+        function getClassName(prediction) {
+            return normalizeClass(
+                prediction.class ||
+                prediction.label ||
+                prediction.disease ||
+                prediction.name ||
+                ''
+            );
+        }
+
+        function getConfidence(prediction) {
+            let value = Number(
+                prediction.confidence ??
+                prediction.score ??
+                prediction.probability ??
+                0
+            );
+
+            if (value > 1) value = value / 100;
+            return Math.max(0, Math.min(1, value));
+        }
+
+        async function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                showError('Please select a valid image file.');
+                return;
+            }
+
+            const crop = cropSelect.value;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                imagePreview.style.display = 'block';
+
+                setTimeout(() => {
+                    analyzeImage(file, e.target.result, crop);
+                }, 300);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Shrink large phone photos before upload (faster, and under the server's size limit).
+        function resizeToDataUrl(file, maxSide = 1024) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                const url = URL.createObjectURL(file);
+                img.onload = () => {
+                    const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.round(img.width * scale);
+                    canvas.height = Math.round(img.height * scale);
+                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                    URL.revokeObjectURL(url);
+                    resolve(canvas.toDataURL('image/jpeg', 0.85));
+                };
+                img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read the image.')); };
+                img.src = url;
+            });
+        }
+
+        async function analyzeImage(file, base64Image, crop) {
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            errorMessage.style.display = 'none';
+            loadingText.textContent = `🤖 Analyzing ${getCropName(crop)} image...`;
+
+            try {
+                const image = await resizeToDataUrl(file);
+
+                const controller = new AbortController();
+                const abortTimer = setTimeout(() => controller.abort(), 60000);
+                let response;
+                try {
+                    response = await fetch(BACKEND_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image, crop }),
+                        signal: controller.signal
+                    });
+                } catch (e) {
+                    if (e.name === 'AbortError') throw new Error('The AI took too long. Please try again.');
+                    throw new Error('Could not reach the AI service. Check your internet connection and try again.');
+                } finally {
+                    clearTimeout(abortTimer);
+                }
+
+                let data = null;
+                try { data = await response.json(); } catch (e) {}
+                if (!response.ok || !data) {
+                    throw new Error((data && data.error) || `AI service error ${response.status}`);
+                }
+
+                if (location.search.includes('debug')) {
+                    let box = document.getElementById('debugBox');
+                    if (!box) {
+                        box = document.createElement('pre');
+                        box.id = 'debugBox';
+                        box.style.cssText = 'font-size:12px;background:#f5f5f5;padding:10px;border-radius:8px;text-align:left;white-space:pre-wrap;margin-top:15px;';
+                        document.getElementById('uploadSection').appendChild(box);
+                    }
+                    box.textContent = JSON.stringify(data, null, 1);
+                }
+
+                displayAiResult(data, crop);
+            } catch (error) {
+                console.error('Analysis error:', error);
+                showError(error.message || 'Analysis failed. Please try another clear plant image.');
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function setNumberedList(container, items) {
+            container.innerHTML = '';
+            items.forEach((textValue, index) => {
+                const item = document.createElement('div');
+                item.className = 'solution-item';
+                const number = document.createElement('div');
+                number.className = 'solution-number';
+                number.textContent = index + 1;
+                const text = document.createElement('div');
+                text.textContent = textValue;
+                item.appendChild(number);
+                item.appendChild(text);
+                container.appendChild(item);
+            });
+        }
+
+        const CONFIDENCE_LABEL = { low: 'Low', medium: 'Medium', high: 'High' };
+        const TYPE_LABEL = {
+            healthy: 'Healthy', disease: 'Disease', pest: 'Pest damage',
+            nutrient_or_other: 'Nutrient / other problem', unclear: 'Unclear'
+        };
+
+        function displayAiResult(d, crop) {
+            const cropName = getCropName(crop);
+            const unsure = !d.image_ok || d.type === 'unclear' || d.confidence === 'low';
+            const wrongCrop = d.crop_matches === false;
+
+            document.getElementById('cropName').textContent = cropName;
+            document.getElementById('symptomsText').textContent = d.what_you_see || '';
+            document.getElementById('alternativesText').textContent =
+                d.alternatives && d.alternatives.length ? 'Other possibilities: ' + d.alternatives.join(', ') : '';
+            document.getElementById('confidenceBadge').textContent =
+                `🎯 AI Confidence: ${CONFIDENCE_LABEL[d.confidence] || 'Low'}`;
+
+            const severityBadge = document.getElementById('severityBadge');
+            const solutions = document.getElementById('solutionsList');
+            const prevention = document.getElementById('preventionText');
+
+            if (wrongCrop || !d.image_ok) {
+                document.getElementById('diseaseName').textContent =
+                    wrongCrop ? `⚠️ This does not look like ${cropName}` : '⚠️ Photo not clear enough';
+                document.getElementById('growthStage').textContent = 'Cannot diagnose';
+                document.getElementById('maturityStatus').textContent = 'Retake the photo';
+                severityBadge.textContent = 'Do not treat from this result';
+                severityBadge.className = 'severity severity-medium';
+                setNumberedList(solutions, wrongCrop
+                    ? [`The photo looks like: ${d.detected_crop}. Select the correct crop above, or take a photo of the ${cropName} plant.`,
+                       'Take a close, well-lit photo of the affected leaf, stem, cob or pest.']
+                    : ['Take a close, well-lit photo of the affected part of the plant.',
+                       'Hold the camera steady so the damage is in focus.',
+                       'Try another image before taking any action.']);
+                prevention.textContent = 'If symptoms continue, ask a local agricultural extension officer.';
+            } else if (unsure) {
+                document.getElementById('diseaseName').textContent = `⚠️ Not sure - possibly: ${d.condition}`;
+                document.getElementById('growthStage').textContent = TYPE_LABEL[d.type] || 'Unclear';
+                document.getElementById('maturityStatus').textContent = 'Confirm before treating';
+                severityBadge.textContent = 'Do not treat from this result';
+                severityBadge.className = 'severity severity-medium';
+                setNumberedList(solutions, [
+                    'Take another clear, close-up photo, ideally of several affected plants.',
+                    'Do not spray or treat based only on this result.',
+                    'Show the plant to a local agricultural extension officer to confirm.'
+                ]);
+                prevention.textContent = 'Regular scouting of your field helps you catch problems early.';
+            } else {
+                document.getElementById('diseaseName').textContent =
+                    d.type === 'healthy' ? `${d.condition} ✅` : d.condition;
+                document.getElementById('growthStage').textContent = TYPE_LABEL[d.type] || '';
+                const sev = d.severity;
+                document.getElementById('maturityStatus').textContent =
+                    sev === 'none' ? 'Continue monitoring'
+                    : sev === 'critical' || sev === 'high' ? 'Act soon' : 'Monitor and act if it spreads';
+                severityBadge.textContent = 'Severity: ' + sev.charAt(0).toUpperCase() + sev.slice(1);
+                severityBadge.className = 'severity severity-' + sev;
+                setNumberedList(solutions, d.actions && d.actions.length ? d.actions
+                    : ['Monitor the field regularly.', 'Confirm with a local agricultural extension officer.']);
+                prevention.textContent = d.prevention || '';
+            }
+
+            result.style.display = 'block';
+            result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function showLowConfidence(confidence, crop) {
+            const pct = Math.round(confidence * 100);
+
+            document.getElementById('diseaseName').textContent =
+                '⚠️ Diagnosis Uncertain';
+            document.getElementById('cropName').textContent = getCropName(crop);
+            document.getElementById('growthStage').textContent =
+                'Image/model confidence is too low';
+            document.getElementById('maturityStatus').textContent =
+                'Retake a clearer photo';
+
+            const confidenceBadge = document.getElementById('confidenceBadge');
+            confidenceBadge.textContent = `🎯 ${pct}% AI Confidence`;
+
+            const severityBadge = document.getElementById('severityBadge');
+            severityBadge.textContent = 'Do not treat from this result';
+            severityBadge.className = 'severity severity-medium';
+
+            document.getElementById('solutionsList').innerHTML = `
+                <div class="solution-item">
+                    <div class="solution-number">1</div>
+                    <div>Take a close, well-lit photo of the affected leaf, stem or pest.</div>
+                </div>
+                <div class="solution-item">
+                    <div class="solution-number">2</div>
+                    <div>Make sure the affected area is clearly visible and in focus.</div>
+                </div>
+                <div class="solution-item">
+                    <div class="solution-number">3</div>
+                    <div>Try another image before taking any treatment action.</div>
+                </div>
+            `;
+
+            document.getElementById('preventionText').textContent =
+                'CropDoctor could not reach a reliable diagnosis from this image. When symptoms persist, consult a qualified agricultural extension officer.';
+
+            result.style.display = 'block';
+            result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function displayResults(prediction, crop) {
+            const diseaseKey = getClassName(prediction);
+            const confidence = Math.round(getConfidence(prediction) * 100);
+
+            const cropDb = diseaseDatabase[crop] || diseaseDatabase.maize;
+            let info = cropDb[diseaseKey]
+                || cropDb[diseaseKey.replace(/-/g, '_')]
+                || cropDb[diseaseKey.replace(/_/g, '-')];
+
+            /*
+             * Avoid the old dangerous behavior of silently treating an unknown
+             * class as Blight. Unknown classes now produce an explicit warning.
+             */
+            if (!info) {
+                document.getElementById('diseaseName').textContent =
+                    `⚠️ ${prediction.class || prediction.label || 'Unknown condition'}`;
+                document.getElementById('cropName').textContent = getCropName(crop);
+                document.getElementById('growthStage').textContent =
+                    'AI class detected, but no verified guidance is configured';
+                document.getElementById('maturityStatus').textContent =
+                    'Needs confirmation';
+
+                document.getElementById('confidenceBadge').textContent =
+                    `🎯 ${confidence}% AI Confidence`;
+
+                const severityBadge = document.getElementById('severityBadge');
+                severityBadge.textContent = 'Confirm diagnosis';
+                severityBadge.className = 'severity severity-medium';
+
+                document.getElementById('solutionsList').innerHTML = `
+                    <div class="solution-item">
+                        <div class="solution-number">1</div>
+                        <div>Do not apply a treatment based only on this result.</div>
+                    </div>
+                    <div class="solution-item">
+                        <div class="solution-number">2</div>
+                        <div>Retake the photo and compare the symptoms carefully.</div>
+                    </div>
+                    <div class="solution-item">
+                        <div class="solution-number">3</div>
+                        <div>Confirm the diagnosis with a qualified agricultural extension officer.</div>
+                    </div>
+                `;
+
+                document.getElementById('preventionText').textContent =
+                    'CropDoctor detected a class that does not yet have verified treatment guidance in its database.';
+
+                result.style.display = 'block';
+                result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                return;
+            }
+
+            document.getElementById('diseaseName').textContent = info.disease;
+            // TEMPORARY debug: shows raw class number from the model.
+            document.getElementById('cropName').textContent = getCropName(crop) + ' (debug: class #' + prediction.index + ' ' + (prediction.class || '') + ')';
+            document.getElementById('growthStage').textContent = info.stage;
+            document.getElementById('maturityStatus').textContent = info.maturity;
+            document.getElementById('preventionText').textContent = info.prevention;
+
+            document.getElementById('confidenceBadge').textContent =
+                `🎯 ${confidence}% AI Confidence`;
+
+            const severityBadge = document.getElementById('severityBadge');
+            severityBadge.textContent = 'Severity: ' + info.severity;
+            severityBadge.className =
+                'severity severity-' + info.severity.toLowerCase();
+
+            const solutionsList = document.getElementById('solutionsList');
+            solutionsList.innerHTML = '';
+
+            info.solutions.forEach((solution, index) => {
+                const item = document.createElement('div');
+                item.className = 'solution-item';
+
+                const number = document.createElement('div');
+                number.className = 'solution-number';
+                number.textContent = index + 1;
+
+                const text = document.createElement('div');
+                text.textContent = solution;
+
+                item.appendChild(number);
+                item.appendChild(text);
+                solutionsList.appendChild(item);
+            });
+
+            result.style.display = 'block';
+            result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        function resetApp() {
+            document.getElementById('symptomsText').textContent = '';
+            document.getElementById('alternativesText').textContent = '';
+            imagePreview.style.display = 'none';
+            result.style.display = 'none';
+            errorMessage.style.display = 'none';
+            fileInput.value = '';
+            cameraInput.value = '';
+            previewImg.src = '';
+        }
+    </script>
+</body>
+</html>
