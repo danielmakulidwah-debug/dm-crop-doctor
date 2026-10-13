@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CropDoctor - AI Crop Pest & Disease Detection</title>
+    <meta name="theme-color" content="#2e7d32">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="CropDoctor">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="manifest" href="manifest.webmanifest">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #2e7d32;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .ai-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        .upload-section {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 40px;
+            margin: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #2196f3;
+            color: white;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .image-preview {
+            margin: 20px 0;
+            display: none;
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .loading {
+            display: none;
+            margin: 30px 0;
+        }
+
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #4caf50;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .diagnosis-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .diagnosis-card h2 {
+            color: #2e7d32;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+
+        .confidence {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 10px 5px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 1.1em;
+        }
+
+        .severity {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 10px 5px;
+        }
+
+        .severity-high { background: #ffcdd2; color: #c62828; }
+        .severity-medium { background: #fff9c4; color: #f57f17; }
+        .severity-low { background: #fff9c4; color: #f57f17; }
+        .severity-none { background: #c8e6c9; color: #2e7d32; }
+        .severity-critical { background: #ef5350; color: white; }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .info-box {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .info-box strong {
+            display: block;
+            color: #2e7d32;
+            margin-bottom: 5px;
+        }
+
+        .solutions {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .solutions h3 {
+            color: #2e7d32;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .solution-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .solution-number {
+            background: #4caf50;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .prevention-box {
+            background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .prevention-box h4 {
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .status-message {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 0.95em;
+            border: 2px solid #4caf50;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        @media (max-width: 600px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            .header h1 {
+                font-size: 1.8em;
+            }
+            .btn {
+                padding: 12px 30px;
+                font-size: 14px;
+                display: block;
+                width: 100%;
+                margin: 10px 0;
+            }
+        }
+
+        /* ---------- Loading (splash) screen ---------- */
+        #splash {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(160deg, #2e7d32 0%, #1b5e20 100%);
+            color: #fff;
+            padding: calc(24px + env(safe-area-inset-top)) 24px calc(28px + env(safe-area-inset-bottom));
+            transition: opacity .5s ease, visibility .5s ease;
+        }
+        #splash.hide { opacity: 0; visibility: hidden; pointer-events: none; }
+        .splash-center {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .splash-icon {
+            width: 132px;
+            height: 132px;
+            border-radius: 30px;
+            overflow: hidden;
+            box-shadow: 0 12px 32px rgba(0,0,0,.35);
+            animation: splashPop .7s cubic-bezier(.2,.9,.3,1.2) both;
+        }
+        .splash-icon svg { display: block; width: 100%; height: 100%; }
+        .splash-center h1 {
+            font-size: 2.2em;
+            margin-top: 22px;
+            letter-spacing: .5px;
+            animation: splashFade .8s .25s ease both;
+        }
+        .splash-center p {
+            margin-top: 6px;
+            opacity: .85;
+            font-size: .95em;
+            animation: splashFade .8s .4s ease both;
+        }
+        .splash-dots { display: flex; gap: 9px; margin-top: 34px; }
+        .splash-dots span {
+            width: 10px; height: 10px; border-radius: 50%;
+            background: #fff; opacity: .35;
+            animation: splashDot 1.2s infinite ease-in-out;
+        }
+        .splash-dots span:nth-child(2) { animation-delay: .2s; }
+        .splash-dots span:nth-child(3) { animation-delay: .4s; }
+        .splash-dev { text-align: center; animation: splashFade .8s .6s ease both; }
+        .splash-dev img {
+            width: 84px; height: 84px; border-radius: 50%;
+            object-fit: cover; border: 3px solid rgba(255,255,255,.9);
+            box-shadow: 0 6px 18px rgba(0,0,0,.3);
+        }
+        .splash-dev small { display: block; margin-top: 10px; opacity: .8; font-size: .8em; letter-spacing: .6px; }
+        .splash-dev strong { display: block; margin-top: 2px; font-size: 1.05em; }
+        @keyframes splashPop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes splashFade { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+        @keyframes splashDot { 0%, 80%, 100% { opacity: .3; transform: scale(.85); } 40% { opacity: 1; transform: scale(1.15); } }
+        @media (prefers-reduced-motion: reduce) {
+            #splash *, #splash { animation: none !important; transition: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div id="splash" role="status" aria-live="polite" aria-label="CropDoctor is loading">
+        <div class="splash-center">
+            <div class="splash-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="splashbg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4caf50"/>
+      <stop offset="1" stop-color="#1b5e20"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#splashbg)"/>
+  <g transform="translate(-26 -22)">
+  <g stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M256 372 V262"/>
+    <path d="M176 376 Q256 346 336 376"/>
+  </g>
+  <path d="M256 296 C196 296 150 262 142 204 C206 202 254 236 256 296 Z" fill="#fff"/>
+  <path d="M256 268 C256 196 308 146 384 140 C388 214 338 270 256 268 Z" fill="#fff"/>
+  <g stroke="#2e7d32" stroke-width="7" stroke-linecap="round" fill="none" opacity=".55">
+    <path d="M256 290 C236 262 214 236 168 214"/>
+    <path d="M262 262 C300 232 336 192 372 154"/>
+  </g>
+  <circle cx="352" cy="338" r="46" fill="#1b5e20" fill-opacity=".35" stroke="#ffd54f" stroke-width="14"/>
+  <path d="M386 372 L428 414" stroke="#ffd54f" stroke-width="18" stroke-linecap="round"/>
+  </g>
+</svg>
+</div>
+            <h1>CropDoctor</h1>
+            <p>AI Crop Pest &amp; Disease Detection</p>
+            <div class="splash-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+        </div>
+        <div class="splash-dev">
+            <img src="data:image/jpeg;base64,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" alt="Daniel Makulidwa">
+            <small>Developed by</small>
+            <strong>Daniel Makulidwa</strong>
+        </div>
+    </div>
+    <script>
+        // Hide the loading screen once the page has loaded (shown for at least ~2 seconds).
+        (function () {
+            var splash = document.getElementById('splash');
+            var started = Date.now();
+            var MIN_MS = 2200;
+            var closed = false;
+            function hide() {
+                if (closed || !splash) return;
+                closed = true;
+                splash.classList.add('hide');
+                setTimeout(function () { if (splash.parentNode) splash.parentNode.removeChild(splash); }, 700);
+            }
+            function ready() { setTimeout(hide, Math.max(0, MIN_MS - (Date.now() - started))); }
+            if (document.readyState === 'complete') ready(); else window.addEventListener('load', ready);
+            setTimeout(hide, 6000); // safety: never block the app
+        })();
+    </script>
+    <div class="container">
+        <div class="header">
+            <h1>🌾 CropDoctor</h1>
+            <span class="ai-badge">🤖 AI Crop Doctor</span>
+            <p style="color: #666; margin-top: 10px;">Maize & Sugarcane Pest and Disease Detection</p>
+            <p style="font-size: 0.85em; color: #999;">AI-assisted diagnosis with general guidance</p>
+            <p style="font-size: 0.85em; color: #8d6e00; background: #fff8e1; border-radius: 8px; padding: 10px; margin-top: 12px;">
+                ⚠️ AI results can be wrong. Confirm with an agricultural extension officer before applying any chemical.
+            </p>
+        </div>
+
+        <div id="uploadSection" class="upload-section">
+            <div style="font-size: 80px; margin-bottom: 20px;">📷</div>
+            <h2 style="color: #333; margin-bottom: 15px;">Capture Plant Image</h2>
+            <p style="color: #666; margin-bottom: 20px;">
+                Select the crop, then take or upload a clear plant photo.
+            </p>
+
+            <div style="margin: 15px auto 20px; max-width: 420px; text-align: left;">
+                <label for="cropSelect" style="display:block; font-weight:bold; color:#2e7d32; margin-bottom:8px;">
+                    🌱 Crop
+                </label>
+                <select id="cropSelect" style="width:100%; padding:13px; border:2px solid #c8e6c9; border-radius:8px; font-size:16px;">
+                    <option value="maize">🌽 Maize</option>
+                    <option value="sugarcane">🎋 Sugarcane</option>
+                </select>
+            </div>
+
+            <div id="statusMessage" class="status-message" style="display: none;"></div>
+            <div id="errorMessage" class="error-message"></div>
+
+            <input type="file" id="fileInput" accept="image/*">
+            <input type="file" id="cameraInput" accept="image/*" capture="environment">
+
+            <button class="btn btn-primary" id="cameraBtn" onclick="document.getElementById('cameraInput').click()">
+                📸 Take Photo
+            </button>
+            <button class="btn btn-secondary" id="uploadBtn" onclick="document.getElementById('fileInput').click()">
+                🖼️ Upload Image
+            </button>
+
+            <div class="image-preview" id="imagePreview">
+                <img id="previewImg" src="" alt="Preview">
+                <button class="btn btn-secondary" style="margin-top: 20px;" onclick="resetApp()">
+                    🔄 Take New Photo
+                </button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 20px; color: #666;" id="loadingText">🤖 AI is analyzing your plant...</p>
+            </div>
+        </div>
+
+        <div id="result" class="result">
+            <div class="diagnosis-card">
+                <h2 id="diseaseName"></h2>
+                <div>
+                    <strong style="color: #666;">Crop:</strong> <span id="cropName">Maize</span><br>
+                    <span class="confidence" id="confidenceBadge">🎯 AI Confidence: --</span>
+                    <span class="severity" id="severityBadge"></span>
+                </div>
+
+                <p id="symptomsText" style="color:#444; margin-top:10px; line-height:1.5;"></p>
+                <p id="alternativesText" style="color:#777; margin-top:8px; font-size:0.9em;"></p>
+
+                <div class="info-grid">
+                    <div class="info-box">
+                        <strong>🔎 Type</strong>
+                        <span id="growthStage"></span>
+                    </div>
+                    <div class="info-box">
+                        <strong>📅 Action Priority</strong>
+                        <span id="maturityStatus"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="solutions">
+                <h3>💡 Recommended Actions</h3>
+                <div id="solutionsList"></div>
+            </div>
+
+            <div class="prevention-box">
+                <h4>🛡️ Prevention Tips</h4>
+                <p id="preventionText"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /*
+         * CropDoctor upgraded frontend
+         * -------------------------------------------------------------
+         * IMPORTANT:
+         * 1. This page deliberately does NOT contain a Roboflow API key.
+         * 2. Set BACKEND_URL to your secure prediction endpoint.
+         * 3. The backend should call your chosen free/open model and return:
+         *    {
+         *      "crop": "maize",
+         *      "class": "fall-armyworm",
+         *      "confidence": 0.92,
+         *      "predictions": [...]
+         *    }
+         *
+         * Expected backend response can also use "label" or "disease".
+         *
+         * Example:
+         *   POST /predict
+         *   Content-Type: multipart/form-data
+         *   field: image
+         *   field: crop = maize|sugarcane
+         */
+
+        const BACKEND_URL = '/api/diagnose';
+
+        // Minimum confidence before CropDoctor gives a diagnosis.
+        const MIN_CONFIDENCE = 0.55;
+
+        const fileInput = document.getElementById('fileInput');
+        const cameraInput = document.getElementById('cameraInput');
+        const cropSelect = document.getElementById('cropSelect');
+        const imagePreview = document.getElementById('imagePreview');
+        const previewImg = document.getElementById('previewImg');
+        const loading = document.getElementById('loading');
+        const loadingText = document.getElementById('loadingText');
+        const result = document.getElementById('result');
+        const errorMessage = document.getElementById('errorMessage');
+        const statusMessage = document.getElementById('statusMessage');
+
+        /*
+         * Disease/pest guidance database.
+         * The AI identifies the class; this database supplies the advice.
+         *
+         * NOTE: Existing treatment entries from the original project are
+         * retained where they existed. Verify pesticide products/rates with
+         * current Malawi agricultural-extension guidance before production use.
+         */
+        const diseaseDatabase = {
+            maize: {
+                healthy: {
+                    disease: 'Healthy Plant ✅',
+                    severity: 'None',
+                    stage: 'Healthy growth',
+                    maturity: 'Continue monitoring',
+                    solutions: [
+                        'Maintain current crop-care practices.',
+                        'Monitor regularly for early pest and disease symptoms.',
+                        'Keep the field weed-free and maintain balanced crop nutrition.',
+                        'Scout regularly for Fall Armyworm during early growth.'
+                    ],
+                    prevention: 'Scout fields regularly, maintain balanced nutrition, practice good field sanitation and use integrated pest management (IPM).'
+                },
+
+                blight: {
+                    disease: 'Northern Leaf Blight',
+                    severity: 'High',
+                    stage: 'Fungal infection',
+                    maturity: 'Potential yield loss',
+                    solutions: [
+                        'Use resistant varieties where available.',
+                        'Remove heavily infected crop material and manage crop residues.',
+                        'Improve field air circulation and avoid excessively dense planting.',
+                        'Use an approved fungicide only according to the current product label and local agricultural guidance.',
+                        'Practice crop rotation with suitable non-host crops.'
+                    ],
+                    prevention: 'Use certified seed, resistant varieties, good field sanitation and crop rotation.'
+                },
+
+                northern_leaf_blight: null,
+                'northern-leaf-blight': null,
+
+                brown_spot: {
+                    disease: 'Brown Spot',
+                    severity: 'Medium',
+                    stage: 'Fungal infection',
+                    maturity: 'Potential yield loss',
+                    solutions: [
+                        'Improve field drainage and avoid waterlogging.',
+                        'Remove or properly manage infected crop debris.',
+                        'Use resistant varieties if available.',
+                        'Maintain balanced crop nutrition.',
+                        'Use an approved fungicide according to the current label and local agricultural guidance when recommended.'
+                    ],
+                    prevention: 'Use healthy seed, balanced fertilization, good drainage and field sanitation.'
+                },
+
+                corn_rust: {
+                    disease: 'Common Rust',
+                    severity: 'Medium',
+                    stage: 'Fungal infection',
+                    maturity: 'Potential yield loss',
+                    solutions: [
+                        'Use rust-resistant varieties where available.',
+                        'Scout plants regularly, especially when conditions favor disease.',
+                        'Remove volunteer maize where practical.',
+                        'Use an approved fungicide according to local agricultural guidance when treatment is justified.'
+                    ],
+                    prevention: 'Plant resistant varieties, scout regularly and practice crop rotation.'
+                },
+
+                rust: null,
+                'common-rust': null,
+                common_rust: null,
+
+                corn_smut: {
+                    disease: 'Corn Smut',
+                    severity: 'Medium',
+                    stage: 'Fungal infection',
+                    maturity: 'Localized damage',
+                    solutions: [
+                        'Remove and safely destroy infected galls before they release spores.',
+                        'Avoid unnecessary mechanical injury to plants.',
+                        'Use disease-free seed and suitable varieties.',
+                        'Practice crop rotation where appropriate.'
+                    ],
+                    prevention: 'Handle plants carefully, remove infected galls early and maintain good field sanitation.'
+                },
+
+                downy_mildew: {
+                    disease: 'Downy Mildew',
+                    severity: 'High',
+                    stage: 'Fungal-like infection',
+                    maturity: 'Can cause severe stunting and yield loss',
+                    solutions: [
+                        'Remove and destroy severely infected plants where appropriate.',
+                        'Improve air circulation and avoid excessively dense planting.',
+                        'Use resistant varieties where available.',
+                        'Use seed treatment or approved fungicide products only according to local agricultural guidance.'
+                    ],
+                    prevention: 'Use treated/quality seed, resistant varieties, good drainage and suitable plant spacing.'
+                },
+
+                'fall-armyworm-larva': {
+                    disease: 'Fall Armyworm',
+                    severity: 'Critical',
+                    stage: 'Pest infestation',
+                    maturity: 'Serious yield risk if uncontrolled',
+                    solutions: [
+                        'Scout plants frequently and target young larvae early.',
+                        'Hand-pick egg masses or larvae when practical on small farms.',
+                        'Use biological/cultural control and integrated pest management (IPM).',
+                        'Use only locally registered insecticides and follow the product label and agricultural-extension recommendations.',
+                        'Avoid repeatedly using the same insecticide mode of action to reduce resistance risk.'
+                    ],
+                    prevention: 'Frequent scouting, early planting where appropriate, field sanitation, biological control and coordinated IPM.'
+                },
+
+                'fall-armyworm': null,
+                fall_armyworm: null,
+                fallarmyworm: null,
+
+                grey_leaf_spot: {
+                    disease: 'Gray Leaf Spot',
+                    severity: 'High',
+                    stage: 'Fungal infection - Vegetative',
+                    maturity: 'Potential yield loss',
+                    solutions: [
+                        'Use resistant varieties where available.',
+                        'Manage crop residues and rotate with non-host crops.',
+                        'Avoid excessively dense planting.',
+                        'Use an approved fungicide only when recommended and according to its label.'
+                    ],
+                    prevention: 'Use certified seed, resistant varieties, crop rotation and good residue management.'
+                },
+
+                gray_leaf_spot: null,
+
+                'maize-streak-disease': {
+                    disease: 'Maize Streak Virus',
+                    severity: 'High',
+                    stage: 'Viral infection',
+                    maturity: 'Can cause severe stunting and yield loss',
+                    solutions: [
+                        'Remove severely infected plants where practical.',
+                        'Control leafhopper vectors using locally approved integrated pest-management methods.',
+                        'Plant resistant varieties where available.',
+                        'Control grass weeds that can host vectors.',
+                        'There is no direct cure for a virus; prevention and vector management are important.'
+                    ],
+                    prevention: 'Use resistant varieties, healthy seed, early scouting and good weed/vector management.'
+                },
+
+                maize_streak: null,
+                streak_virus: null,
+
+                'yellow-stem-borer': {
+                    disease: 'Yellow Stem Borer',
+                    severity: 'High',
+                    stage: 'Pest infestation',
+                    maturity: 'Stem damage and lodging risk',
+                    solutions: [
+                        'Scout for deadhearts and stem damage.',
+                        'Remove and destroy badly affected plant material where practical.',
+                        'Use biological and cultural control methods as part of IPM.',
+                        'Use only locally registered insecticides and follow the current product label and extension guidance.'
+                    ],
+                    prevention: 'Early scouting, crop-residue management, suitable rotation and integrated pest management.'
+                },
+
+                stem_borer: null,
+                'stem-borer': null,
+                grasshopper: {
+                    disease: 'Grasshopper Damage',
+                    severity: 'Medium',
+                    stage: 'Pest infestation',
+                    maturity: 'Leaf feeding can reduce plant growth',
+                    solutions: [
+                        'Scout field margins and young plants regularly.',
+                        'Reduce weed and alternative-host habitats around the field.',
+                        'Use mechanical or biological controls where practical.',
+                        'Use locally registered insecticides only when necessary and according to the label.'
+                    ],
+                    prevention: 'Regular scouting, weed management and integrated pest management.'
+                },
+
+                leaf_spot: {
+                    disease: 'Maize Leaf Spot',
+                    severity: 'Medium',
+                    stage: 'Fungal/bacterial leaf infection',
+                    maturity: 'Can reduce leaf area and yield',
+                    solutions: [
+                        'Scout fields regularly and note how many leaves are affected.',
+                        'Remove or properly manage infected crop residues after harvest.',
+                        'Rotate with non-host crops and avoid dense planting.',
+                        'Use resistant varieties where available.',
+                        'Confirm the exact cause with an extension officer before using any fungicide.'
+                    ],
+                    prevention: 'Use certified seed, crop rotation, good residue management and balanced nutrition.'
+                },
+
+                lethal_necrosis: {
+                    disease: 'Maize Lethal Necrosis (MLN)',
+                    severity: 'Critical',
+                    stage: 'Viral disease complex',
+                    maturity: 'Can destroy the crop - act immediately',
+                    solutions: [
+                        'Report suspected MLN to your agricultural extension officer immediately.',
+                        'Uproot and destroy severely affected plants away from the field.',
+                        'Do not move seed or plant material from affected fields.',
+                        'Control weeds and insect vectors as advised locally.',
+                        'There is no cure; do not replant maize in the same affected field without advice.'
+                    ],
+                    prevention: 'Use certified clean seed, rotate with non-cereal crops, control vectors and weeds, and report outbreaks early.'
+                },
+
+                'leaf-beetle': {
+                    disease: 'Leaf Beetle Damage',
+                    severity: 'Medium',
+                    stage: 'Pest infestation',
+                    maturity: 'Leaf feeding damage',
+                    solutions: [
+                        'Scout leaves regularly for adults and feeding damage.',
+                        'Remove insects manually where practical on small plots.',
+                        'Maintain field sanitation and weed control.',
+                        'Use locally registered control products only when necessary and according to the label.'
+                    ],
+                    prevention: 'Regular scouting, weed management and IPM.'
+                }
+            },
+
+            sugarcane: {
+                healthy: {
+                    disease: 'Healthy Sugarcane ✅',
+                    severity: 'None',
+                    stage: 'Healthy growth',
+                    maturity: 'Continue monitoring',
+                    solutions: [
+                        'Maintain good field sanitation and crop nutrition.',
+                        'Scout regularly for disease and pest symptoms.',
+                        'Remove severely affected plants promptly when appropriate.',
+                        'Maintain good drainage and weed control.'
+                    ],
+                    prevention: 'Use healthy planting material, resistant varieties where available, good sanitation and regular scouting.'
+                },
+
+                bacterial_blight: {
+                    disease: 'Sugarcane Bacterial Blight',
+                    severity: 'High',
+                    stage: 'Bacterial disease',
+                    maturity: 'Potential yield reduction',
+                    solutions: [
+                        'Remove and destroy severely affected plant material where practical.',
+                        'Use clean, healthy planting material.',
+                        'Avoid moving contaminated tools or planting material between fields.',
+                        'Use resistant/tolerant varieties where available.',
+                        'Seek local agricultural-extension advice for confirmed outbreaks.'
+                    ],
+                    prevention: 'Use clean planting material, resistant varieties, sanitation and good field hygiene.'
+                },
+
+                mosaic: {
+                    disease: 'Sugarcane Mosaic Disease',
+                    severity: 'High',
+                    stage: 'Viral disease',
+                    maturity: 'Can reduce plant vigor and yield',
+                    solutions: [
+                        'Remove severely affected stools where practical.',
+                        'Use certified disease-free planting material.',
+                        'Use resistant or tolerant varieties where available.',
+                        'Control alternative hosts and insect vectors as recommended locally.'
+                    ],
+                    prevention: 'Use clean planting material, resistant varieties and regular field scouting.'
+                },
+
+                mosaic_disease: null,
+                red_rot: {
+                    disease: 'Sugarcane Red Rot',
+                    severity: 'High',
+                    stage: 'Fungal disease',
+                    maturity: 'Can cause serious yield and stand losses',
+                    solutions: [
+                        'Remove and destroy severely affected stalks or stools where practical.',
+                        'Use healthy, disease-free planting material.',
+                        'Use resistant/tolerant varieties where available.',
+                        'Improve drainage and avoid prolonged waterlogging.',
+                        'Seek agricultural-extension advice for severe outbreaks.'
+                    ],
+                    prevention: 'Clean planting material, resistant varieties, field sanitation, crop rotation where suitable and good drainage.'
+                },
+
+                rust: {
+                    disease: 'Sugarcane Rust',
+                    severity: 'Medium',
+                    stage: 'Fungal disease',
+                    maturity: 'Can reduce photosynthetic leaf area',
+                    solutions: [
+                        'Scout fields regularly and identify the disease early.',
+                        'Use resistant/tolerant varieties where available.',
+                        'Maintain good crop nutrition and field management.',
+                        'Use an approved fungicide only when locally recommended and according to its label.'
+                    ],
+                    prevention: 'Resistant varieties, regular scouting, good nutrition and field sanitation.'
+                },
+
+                yellow_disease: {
+                    disease: 'Sugarcane Yellow Disease',
+                    severity: 'High',
+                    stage: 'Disease symptoms affecting plant vigor',
+                    maturity: 'Potential yield reduction',
+                    solutions: [
+                        'Use healthy planting material.',
+                        'Remove severely affected plants where practical.',
+                        'Use resistant/tolerant varieties where available.',
+                        'Seek local agricultural-extension guidance to confirm the cause and appropriate control.'
+                    ],
+                    prevention: 'Healthy planting material, resistant varieties and regular scouting.'
+                }
+            }
+        };
+
+        // Resolve aliases so different model class naming conventions work.
+        function buildAliases() {
+            const m = diseaseDatabase.maize;
+            m.northern_leaf_blight = m.blight;
+            m['northern-leaf-blight'] = m.blight;
+            m.rust = m.corn_rust;
+            m['common-rust'] = m.corn_rust;
+            m.common_rust = m.corn_rust;
+            m.gray_leaf_spot = m.grey_leaf_spot;
+            m.fall_armyworm = m['fall-armyworm-larva'];
+            m.fallarmyworm = m['fall-armyworm-larva'];
+            m['fall-armyworm'] = m['fall-armyworm-larva'];
+            m.stem_borer = m['yellow-stem-borer'];
+            m['stem-borer'] = m['yellow-stem-borer'];
+            m.leaf_blight = m.blight;
+            m['leaf-blight'] = m.blight;
+            m.streak_virus = m['maize-streak-disease'];
+            m.maize_streak = m['maize-streak-disease'];
+            m['streak-virus'] = m['maize-streak-disease'];
+            m.leaf_beetle = m['leaf-beetle'];
+            m['leaf-spot'] = m.leaf_spot;
+            m['lethal-necrosis'] = m.lethal_necrosis;
+
+            const s = diseaseDatabase.sugarcane;
+            s.mosaic_disease = s.mosaic;
+            s['bacterial-blight'] = s.bacterial_blight;
+            s['red-rot'] = s.red_rot;
+            s['yellow-disease'] = s.yellow_disease;
+        }
+        buildAliases();
+
+        window.addEventListener('load', () => {
+            statusMessage.style.display = 'block';
+            statusMessage.innerHTML =
+                '✅ <strong>CropDoctor is ready.</strong> Select maize or sugarcane and upload a clear plant image.';
+            setTimeout(() => statusMessage.style.display = 'none', 5000);
+        });
+
+        fileInput.addEventListener('change', handleImageUpload);
+        cameraInput.addEventListener('change', handleImageUpload);
+
+        function normalizeClass(value) {
+            return String(value || '')
+                .trim()
+                .toLowerCase()
+                .replace(/[–—]/g, '-')
+                .replace(/\s+/g, '-')
+                .replace(/[_]+/g, '_');
+        }
+
+        function getCropName(crop) {
+            return crop === 'sugarcane' ? 'Sugarcane' : 'Maize';
+        }
+
+        function getPredictionFromResponse(data) {
+            if (!data || typeof data !== 'object') return null;
+
+            // Common response formats: direct result or predictions array.
+            if (Array.isArray(data.predictions) && data.predictions.length) {
+                return data.predictions.reduce((best, item) => {
+                    return Number(item.confidence || 0) > Number(best.confidence || 0)
+                        ? item : best;
+                });
+            }
+
+            if (data.prediction && typeof data.prediction === 'object') {
+                return data.prediction;
+            }
+
+            if (data.class || data.label || data.disease) {
+                return data;
+            }
+
+            return null;
+        }
+
+        function getClassName(prediction) {
+            return normalizeClass(
+                prediction.class ||
+                prediction.label ||
+                prediction.disease ||
+                prediction.name ||
+                ''
+            );
+        }
+
+        function getConfidence(prediction) {
+            let value = Number(
+                prediction.confidence ??
+                prediction.score ??
+                prediction.probability ??
+                0
+            );
+
+            if (value > 1) value = value / 100;
+            return Math.max(0, Math.min(1, value));
+        }
+
+        async function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                showError('Please select a valid image file.');
+                return;
+            }
+
+            const crop = cropSelect.value;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                imagePreview.style.display = 'block';
+
+                setTimeout(() => {
+                    analyzeImage(file, e.target.result, crop);
+                }, 300);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Shrink large phone photos before upload (faster, and under the server's size limit).
+        function resizeToDataUrl(file, maxSide = 800) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                const url = URL.createObjectURL(file);
+                img.onload = () => {
+                    const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.round(img.width * scale);
+                    canvas.height = Math.round(img.height * scale);
+                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                    URL.revokeObjectURL(url);
+                    resolve(canvas.toDataURL('image/jpeg', 0.8));
+                };
+                img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read the image.')); };
+                img.src = url;
+            });
+        }
+
+        async function analyzeImage(file, base64Image, crop) {
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            errorMessage.style.display = 'none';
+            loadingText.textContent = `🤖 Analyzing ${getCropName(crop)} image...`;
+
+            try {
+                const image = await resizeToDataUrl(file);
+
+                const controller = new AbortController();
+                const abortTimer = setTimeout(() => controller.abort(), 75000);
+                let response;
+                try {
+                    response = await fetch(BACKEND_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image, crop }),
+                        signal: controller.signal
+                    });
+                } catch (e) {
+                    if (e.name === 'AbortError') throw new Error('The AI took too long. Please try again.');
+                    throw new Error('Could not reach the AI service. Check your internet connection and try again.');
+                } finally {
+                    clearTimeout(abortTimer);
+                }
+
+                let data = null;
+                try { data = await response.json(); } catch (e) {}
+                if (!response.ok || !data) {
+                    throw new Error((data && data.error) || `AI service error ${response.status}`);
+                }
+
+                if (location.search.includes('debug')) {
+                    let box = document.getElementById('debugBox');
+                    if (!box) {
+                        box = document.createElement('pre');
+                        box.id = 'debugBox';
+                        box.style.cssText = 'font-size:12px;background:#f5f5f5;padding:10px;border-radius:8px;text-align:left;white-space:pre-wrap;margin-top:15px;';
+                        document.getElementById('uploadSection').appendChild(box);
+                    }
+                    box.textContent = JSON.stringify(data, null, 1);
+                }
+
+                displayAiResult(data, crop);
+            } catch (error) {
+                console.error('Analysis error:', error);
+                showError(error.message || 'Analysis failed. Please try another clear plant image.');
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function setNumberedList(container, items) {
+            container.innerHTML = '';
+            items.forEach((textValue, index) => {
+                const item = document.createElement('div');
+                item.className = 'solution-item';
+                const number = document.createElement('div');
+                number.className = 'solution-number';
+                number.textContent = index + 1;
+                const text = document.createElement('div');
+                text.textContent = textValue;
+                item.appendChild(number);
+                item.appendChild(text);
+                container.appendChild(item);
+            });
+        }
+
+        const CONFIDENCE_LABEL = { low: 'Low', medium: 'Medium', high: 'High' };
+        const TYPE_LABEL = {
+            healthy: 'Healthy', disease: 'Disease', pest: 'Pest damage',
+            nutrient_or_other: 'Nutrient / other problem', unclear: 'Unclear'
+        };
+
+        function displayAiResult(d, crop) {
+            const cropName = getCropName(crop);
+            const unsure = !d.image_ok || d.type === 'unclear' || d.confidence === 'low';
+            const wrongCrop = d.crop_matches === false;
+
+            document.getElementById('cropName').textContent = cropName;
+            document.getElementById('symptomsText').textContent = d.what_you_see || '';
+            document.getElementById('alternativesText').textContent =
+                d.alternatives && d.alternatives.length ? 'Other possibilities: ' + d.alternatives.join(', ') : '';
+            document.getElementById('confidenceBadge').textContent =
+                `🎯 AI Confidence: ${CONFIDENCE_LABEL[d.confidence] || 'Low'}`;
+
+            const severityBadge = document.getElementById('severityBadge');
+            const solutions = document.getElementById('solutionsList');
+            const prevention = document.getElementById('preventionText');
+
+            if (wrongCrop || !d.image_ok) {
+                document.getElementById('diseaseName').textContent =
+                    wrongCrop ? `⚠️ This does not look like ${cropName}` : '⚠️ Photo not clear enough';
+                document.getElementById('growthStage').textContent = 'Cannot diagnose';
+                document.getElementById('maturityStatus').textContent = 'Retake the photo';
+                severityBadge.textContent = 'Do not treat from this result';
+                severityBadge.className = 'severity severity-medium';
+                setNumberedList(solutions, wrongCrop
+                    ? [`The photo looks like: ${d.detected_crop}. Select the correct crop above, or take a photo of the ${cropName} plant.`,
+                       'Take a close, well-lit photo of the affected leaf, stem, cob or pest.']
+                    : ['Take a close, well-lit photo of the affected part of the plant.',
+                       'Hold the camera steady so the damage is in focus.',
+                       'Try another image before taking any action.']);
+                prevention.textContent = 'If symptoms continue, ask a local agricultural extension officer.';
+            } else if (unsure) {
+                document.getElementById('diseaseName').textContent = `⚠️ Not sure - possibly: ${d.condition}`;
+                document.getElementById('growthStage').textContent = TYPE_LABEL[d.type] || 'Unclear';
+                document.getElementById('maturityStatus').textContent = 'Confirm before treating';
+                severityBadge.textContent = 'Do not treat from this result';
+                severityBadge.className = 'severity severity-medium';
+                setNumberedList(solutions, [
+                    'Take another clear, close-up photo, ideally of several affected plants.',
+                    'Do not spray or treat based only on this result.',
+                    'Show the plant to a local agricultural extension officer to confirm.'
+                ]);
+                prevention.textContent = 'Regular scouting of your field helps you catch problems early.';
+            } else {
+                document.getElementById('diseaseName').textContent =
+                    d.type === 'healthy' ? `${d.condition} ✅` : d.condition;
+                document.getElementById('growthStage').textContent = TYPE_LABEL[d.type] || '';
+                const sev = d.severity;
+                document.getElementById('maturityStatus').textContent =
+                    sev === 'none' ? 'Continue monitoring'
+                    : sev === 'critical' || sev === 'high' ? 'Act soon' : 'Monitor and act if it spreads';
+                severityBadge.textContent = 'Severity: ' + sev.charAt(0).toUpperCase() + sev.slice(1);
+                severityBadge.className = 'severity severity-' + sev;
+                setNumberedList(solutions, d.actions && d.actions.length ? d.actions
+                    : ['Monitor the field regularly.', 'Confirm with a local agricultural extension officer.']);
+                prevention.textContent = d.prevention || '';
+            }
+
+            result.style.display = 'block';
+            result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function showLowConfidence(confidence, crop) {
+            const pct = Math.round(confidence * 100);
+
+            document.getElementById('diseaseName').textContent =
+                '⚠️ Diagnosis Uncertain';
+            document.getElementById('cropName').textContent = getCropName(crop);
+            document.getElementById('growthStage').textContent =
+                'Image/model confidence is too low';
+            document.getElementById('maturityStatus').textContent =
+                'Retake a clearer photo';
+
+            const confidenceBadge = document.getElementById('confidenceBadge');
+            confidenceBadge.textContent = `🎯 ${pct}% AI Confidence`;
+
+            const severityBadge = document.getElementById('severityBadge');
+            severityBadge.textContent = 'Do not treat from this result';
+            severityBadge.className = 'severity severity-medium';
+
+            document.getElementById('solutionsList').innerHTML = `
+                <div class="solution-item">
+                    <div class="solution-number">1</div>
+                    <div>Take a close, well-lit photo of the affected leaf, stem or pest.</div>
+                </div>
+                <div class="solution-item">
+                    <div class="solution-number">2</div>
+                    <div>Make sure the affected area is clearly visible and in focus.</div>
+                </div>
+                <div class="solution-item">
+                    <div class="solution-number">3</div>
+                    <div>Try another image before taking any treatment action.</div>
+                </div>
+            `;
+
+            document.getElementById('preventionText').textContent =
+                'CropDoctor could not reach a reliable diagnosis from this image. When symptoms persist, consult a qualified agricultural extension officer.';
+
+            result.style.display = 'block';
+            result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function displayResults(prediction, crop) {
+            const diseaseKey = getClassName(prediction);
+            const confidence = Math.round(getConfidence(prediction) * 100);
+
+            const cropDb = diseaseDatabase[crop] || diseaseDatabase.maize;
+            let info = cropDb[diseaseKey]
+                || cropDb[diseaseKey.replace(/-/g, '_')]
+                || cropDb[diseaseKey.replace(/_/g, '-')];
+
+            /*
+             * Avoid the old dangerous behavior of silently treating an unknown
+             * class as Blight. Unknown classes now produce an explicit warning.
+             */
+            if (!info) {
+                document.getElementById('diseaseName').textContent =
+                    `⚠️ ${prediction.class || prediction.label || 'Unknown condition'}`;
+                document.getElementById('cropName').textContent = getCropName(crop);
+                document.getElementById('growthStage').textContent =
+                    'AI class detected, but no verified guidance is configured';
+                document.getElementById('maturityStatus').textContent =
+                    'Needs confirmation';
+
+                document.getElementById('confidenceBadge').textContent =
+                    `🎯 ${confidence}% AI Confidence`;
+
+                const severityBadge = document.getElementById('severityBadge');
+                severityBadge.textContent = 'Confirm diagnosis';
+                severityBadge.className = 'severity severity-medium';
+
+                document.getElementById('solutionsList').innerHTML = `
+                    <div class="solution-item">
+                        <div class="solution-number">1</div>
+                        <div>Do not apply a treatment based only on this result.</div>
+                    </div>
+                    <div class="solution-item">
+                        <div class="solution-number">2</div>
+                        <div>Retake the photo and compare the symptoms carefully.</div>
+                    </div>
+                    <div class="solution-item">
+                        <div class="solution-number">3</div>
+                        <div>Confirm the diagnosis with a qualified agricultural extension officer.</div>
+                    </div>
+                `;
+
+                document.getElementById('preventionText').textContent =
+                    'CropDoctor detected a class that does not yet have verified treatment guidance in its database.';
+
+                result.style.display = 'block';
+                result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                return;
+            }
+
+            document.getElementById('diseaseName').textContent = info.disease;
+            // TEMPORARY debug: shows raw class number from the model.
+            document.getElementById('cropName').textContent = getCropName(crop) + ' (debug: class #' + prediction.index + ' ' + (prediction.class || '') + ')';
+            document.getElementById('growthStage').textContent = info.stage;
+            document.getElementById('maturityStatus').textContent = info.maturity;
+            document.getElementById('preventionText').textContent = info.prevention;
+
+            document.getElementById('confidenceBadge').textContent =
+                `🎯 ${confidence}% AI Confidence`;
+
+            const severityBadge = document.getElementById('severityBadge');
+            severityBadge.textContent = 'Severity: ' + info.severity;
+            severityBadge.className =
+                'severity severity-' + info.severity.toLowerCase();
+
+            const solutionsList = document.getElementById('solutionsList');
+            solutionsList.innerHTML = '';
+
+            info.solutions.forEach((solution, index) => {
+                const item = document.createElement('div');
+                item.className = 'solution-item';
+
+                const number = document.createElement('div');
+                number.className = 'solution-number';
+                number.textContent = index + 1;
+
+                const text = document.createElement('div');
+                text.textContent = solution;
+
+                item.appendChild(number);
+                item.appendChild(text);
+                solutionsList.appendChild(item);
+            });
+
+            result.style.display = 'block';
+            result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        function resetApp() {
+            document.getElementById('symptomsText').textContent = '';
+            document.getElementById('alternativesText').textContent = '';
+            imagePreview.style.display = 'none';
+            result.style.display = 'none';
+            errorMessage.style.display = 'none';
+            fileInput.value = '';
+            cameraInput.value = '';
+            previewImg.src = '';
+        }
+    </script>
+</body>
+</html>
